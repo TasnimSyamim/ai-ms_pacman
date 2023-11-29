@@ -65,7 +65,6 @@ public class Q_RL extends PacmanController {
     private static final int MIN_DISTANCE_TO_EVADE_GHOST = 25;
 
     private ArrayList<Double> current_reward = new ArrayList<>(Collections.singletonList(0.0));
-
     private static final double PILL_REWARD = 1;
     private static final double EATING_EDIBLE_GHOST_REWARD = 50.0;
     private static final double LEVEL_UP_REWARD = 50.0;
@@ -85,8 +84,12 @@ public class Q_RL extends PacmanController {
     public MOVE getMove(Game game, long timeDue) {
         int current = game.getPacmanCurrentNodeIndex();
 
+        System.out.println("Fitness Score time/level: "+game.getTotalTime()/(game.getCurrentLevel()+1));
+        System.out.println("Total Time: "+game.getTotalTime());
+        System.out.println("Number of Eaten Ghost: "+game.getNumGhostsEaten());
+        System.out.println("Score-Time: "+ (game.getScore()-game.getTotalTime()));
         // System.out.println(qValues.keySet());
-
+        
         // Strategy 1: Adjusted for PO (Pill Observations)
         for (Constants.GHOST ghost : Constants.GHOST.values()) {
             if (game.getGhostEdibleTime(ghost) == 0 && game.getGhostLairTime(ghost) == 0) {
@@ -101,6 +104,11 @@ public class Q_RL extends PacmanController {
                 }
             }
         }
+        
+        System.out.println("Fitness Score time/level: "+game.getTotalTime()/(game.getCurrentLevel()+1));
+        System.out.println("Total Time: "+game.getTotalTime());
+        System.out.println("Number of Eaten Ghost: "+game.getNumGhostsEaten());
+        
 
         // Strategy 2: Go after the pills and power pills that we can see
         int[] pills = game.getPillIndices();
@@ -116,6 +124,8 @@ public class Q_RL extends PacmanController {
             }
         }
 
+
+
         for (int i = 0; i < powerPills.length; i++) {
             Boolean powerPillStillAvailable = game.isPowerPillStillAvailable(i);
             if (powerPillStillAvailable != null && powerPillStillAvailable) {
@@ -125,6 +135,7 @@ public class Q_RL extends PacmanController {
                 return powerPillMove;
             }
         }
+
 
         // Strategy 3: Find nearest edible ghost and go after them
         int minDistance = Integer.MAX_VALUE;
@@ -146,6 +157,7 @@ public class Q_RL extends PacmanController {
             printMoveInfo("Hunting the nearest edible ghost", huntMove, game);
             return huntMove;
         }
+
 
         // Strategy 4: New PO strategy as now S3 can fail if nothing you can see
         // Going to pick a random action here

@@ -2,6 +2,7 @@
 
 This repository represents an ongoing experiment where we endeavor to implement artificial intelligence for playing Ms. Pac-Man. Our goal is to explore and apply various methodologies, striving to enhance the capabilities of the AI system in its quest to master the intricacies of Ms. Pac-Man gameplay. 
 
+Hi
 
 ## **How to Run**
 Run `Main.java`

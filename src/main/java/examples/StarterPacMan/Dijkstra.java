@@ -11,6 +11,13 @@ public class Dijkstra extends PacmanController {
     private static final int MIN_DISTANCE = 20;
     private Random random = new Random();
 
+    private ArrayList<Double> current_reward = new ArrayList<>(Collections.singletonList(0.0));
+    private static final double PILL_REWARD = 1;
+    private static final double EATING_EDIBLE_GHOST_REWARD = 50.0;
+    private static final double LEVEL_UP_REWARD = 50.0;
+    private static final double CAUGHT_BY_NON_EDIBLE_GHOST_PENALTY = -25.0;
+    private static final double DECAY_PENALTY = -0.05;
+
     @Override
     public MOVE getMove(Game game, long timeDue) {
         int current = game.getPacmanCurrentNodeIndex();
@@ -40,6 +47,12 @@ public class Dijkstra extends PacmanController {
         // Initialize distances and add the current node to the priority queue
         distances.put(current, 0);
         priorityQueue.add(new NodeDistancePair(current, 0));
+
+
+        System.out.println("Fitness Score time/level: "+game.getTotalTime()/(game.getCurrentLevel()+1));
+        System.out.println("Total Time: "+game.getTotalTime());
+        System.out.println("Number of Eaten Ghost: "+game.getNumGhostsEaten());
+        System.out.println("Score-Time: "+ (game.getScore()-game.getTotalTime()));
 
         while (!priorityQueue.isEmpty()) {
             NodeDistancePair nodePair = priorityQueue.poll();
@@ -71,6 +84,8 @@ public class Dijkstra extends PacmanController {
                     }
                 }
             }
+
+
 
             // Strategy 2: Find nearest edible ghost and go after them
             for (Constants.GHOST ghost : Constants.GHOST.values()) {
@@ -104,7 +119,14 @@ public class Dijkstra extends PacmanController {
                     priorityQueue.add(new NodeDistancePair(powerPill, distance + powerPillDistance));
                 }
             }
+
         }
+
+        System.out.println("Fitness Score time/level: "+game.getTotalTime()/(game.getCurrentLevel()+1));
+        System.out.println("Total Time: "+game.getTotalTime());
+        System.out.println("Number of Eaten Ghost: "+game.getNumGhostsEaten());
+        System.out.println("Score-Time: "+ (game.getScore()-game.getTotalTime()));
+        calculateReward(game);
 
         // Strategy 4: New PO strategy as now S3 can fail if nothing you can see
         // Going to pick a random action here
@@ -115,7 +137,11 @@ public class Dijkstra extends PacmanController {
             validMoves.remove(lastMoveMade.opposite());
             return validMoves.get(random.nextInt(validMoves.size()));
         }
-
+        System.out.println("Fitness Score time/level: "+game.getTotalTime()/(game.getCurrentLevel()+1));
+        System.out.println("Total Time: "+game.getTotalTime());
+        System.out.println("Number of Eaten Ghost: "+game.getNumGhostsEaten());
+        System.out.println("Score-Time: "+ (game.getScore()-game.getTotalTime()));
+        calculateReward(game);
         // Must be possible to turn around
         return lastMoveMade.opposite();
     }
@@ -123,6 +149,27 @@ public class Dijkstra extends PacmanController {
     // Helper method to check if Pac-Man is in a corner
     private boolean isInCorner(int node, Game game) {
         return game.isJunction(node) && game.getNeighbouringNodes(node).length == 2;
+    }
+
+    private double calculateReward(Game game){
+        double livesPenalty = (3 - game.getPacmanNumberOfLivesRemaining()) * CAUGHT_BY_NON_EDIBLE_GHOST_PENALTY;
+        double timeStepPenalty = game.getCurrentLevelTime() * DECAY_PENALTY;
+
+        double eatenPillsReward = (game.getNumberOfPills() - game.getNumberOfActivePills()) * PILL_REWARD;
+        double eatenGhostsReward = game.getNumGhostsEaten() * EATING_EDIBLE_GHOST_REWARD;
+        double currentLevel = game.getCurrentLevel() * LEVEL_UP_REWARD;
+
+        double reward = (eatenPillsReward +
+                eatenGhostsReward +
+                currentLevel +
+                timeStepPenalty +
+                livesPenalty);
+        this.current_reward.add(reward);
+        return this.current_reward.get(this.current_reward.size() - 1);
+    }
+
+    public ArrayList<Double> getRewards() {
+        return this.current_reward;
     }
 
     // Helper class to represent a pair of node and its distance

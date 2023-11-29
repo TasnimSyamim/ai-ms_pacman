@@ -84,7 +84,7 @@ public class Main {
                 .setVisual(true)
                 .setPacmanPO(false)
                 .setTickLimit(20000)
-                .setScaleFactor(3) // Increase game visual size
+                .setScaleFactor(2) // Increase game visual size
                 .setPOType(POType.RADIUS) // pacman sense objects around it in a radius wide fashion instead of straight
                                           // line sights
                 .setSightLimit(sightRadius) // The sight radius limit, set to maximum
@@ -99,26 +99,38 @@ public class Main {
 
         MASController ghosts = new POCommGhosts(50);
 
-        int speed = 1; // smaller number will run faster
+        int speed = 0; // smaller number will run faster
 
-        executor.runGame(new InformationSetMCTSPacMan(), ghosts, speed);
+        // executor.runGame(new InformationSetMCTSPacMan(), ghosts, speed);
         
-        // Q_RL qlearning_model = new Q_RL();
+        Dijkstra dijkstra_model = new Dijkstra();
+        executor.runGame(dijkstra_model, ghosts, speed);
+        ArrayList<Double> rewards_list = dijkstra_model.getRewards();
+
+        RandomWalk random_model = new RandomWalk();
+        // executor.runGame(random_model, ghosts, speed);
+
+        AStar astar_model = new AStar();
+        // executor.runGame(astar_model, ghosts, speed);
+        // ArrayList<Double> rewards_list = astar_model.getRewards();
+
+        Q_RL qlearning_model = new Q_RL();
         // executor.runGame(qlearning_model, ghosts, speed);
         // ArrayList<Double> rewards_list = qlearning_model.getRewards();
 
-        // SwingUtilities.invokeLater(() -> {
-        //     Main mainInstance = new Main();
-        //     mainInstance.setData(rewards_list); // Set the rewards_list to the data variable
-        //     LineChart_AWT chart = new LineChart_AWT(
-        //             "Rewards Chart",
-        //             "Rewards vs Time Step",
-        //             mainInstance.getData());
 
-        //     chart.pack();
-        //     RefineryUtilities.centerFrameOnScreen(chart);
-        //     chart.setVisible(true);
-        // });
+        SwingUtilities.invokeLater(() -> {
+            Main mainInstance = new Main();
+            mainInstance.setData(rewards_list); // Set the rewards_list to the data variable
+            LineChart_AWT chart = new LineChart_AWT(
+                    "Rewards Chart",
+                    "Rewards vs Time Step",
+                    mainInstance.getData());
+
+            chart.pack();
+            RefineryUtilities.centerFrameOnScreen(chart);
+            chart.setVisible(true);
+        });
     }
 
     public Main() {

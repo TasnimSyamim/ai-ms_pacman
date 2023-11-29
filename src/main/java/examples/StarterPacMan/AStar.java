@@ -6,15 +6,28 @@ import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.PriorityQueue;
 import java.util.Random;
 
 public class AStar extends PacmanController {
     private Random random = new Random();
 
+    private ArrayList<Double> current_reward = new ArrayList<>(Collections.singletonList(0.0));
+    private double fitness_score = 0;
+    private int numOfGhostEaten = 0;
+    private static final double PILL_REWARD = 1;
+    private static final double EATING_EDIBLE_GHOST_REWARD = 50.0;
+    private static final double LEVEL_UP_REWARD = 50.0;
+    private static final double CAUGHT_BY_NON_EDIBLE_GHOST_PENALTY = -25.0;
+    private static final double DECAY_PENALTY = -0.05;
+
+
     @Override
     public MOVE getMove(Game game, long timeDue) {
         int current = game.getPacmanCurrentNodeIndex();
+
+
 
         // Strategy: Use A* algorithm to find the nearest pill or power pill
         int[] pills = game.getPillIndices();
@@ -28,7 +41,13 @@ public class AStar extends PacmanController {
             if (pillStillAvailable != null && pillStillAvailable) {
                 targets.add(pills[i]);
             }
+
         }
+        System.out.println("Fitness Score time/level: "+game.getTotalTime()/(game.getCurrentLevel()+1));
+        System.out.println("Total Time: "+game.getTotalTime());
+        System.out.println("Number of Eaten Ghost: "+game.getNumGhostsEaten());
+        System.out.println("Score-Time: "+ (game.getScore()-game.getTotalTime()));
+        calculateReward(game);
 
         // Collect available power pills as targets
         for (int i = 0; i < powerPills.length; i++) {
@@ -38,6 +57,8 @@ public class AStar extends PacmanController {
             }
         }
 
+
+
         if (!targets.isEmpty()) {
             int[] targetsArray = new int[targets.size()];
 
@@ -45,11 +66,15 @@ public class AStar extends PacmanController {
             for (int i = 0; i < targetsArray.length; i++) {
                 targetsArray[i] = targets.get(i);
             }
+            // calculateReward(game);
 
             // Use A* algorithm to find the nearest target
             int nearestTarget = findNearestTarget(current, targetsArray, game);
             return game.getNextMoveTowardsTarget(current, nearestTarget, Constants.DM.PATH);
         }
+
+
+
 
         // If no targets are available, just move randomly
         return getRandomMove(game.getPacmanLastMoveMade());
@@ -66,6 +91,7 @@ public class AStar extends PacmanController {
                 filteredMoves[index++] = move;
             }
         }
+
 
         // Choose a random move from the filtered list
         return filteredMoves[random.nextInt(filteredMoves.length)];
@@ -136,6 +162,44 @@ public class AStar extends PacmanController {
             }
         }
         return false;
+    }
+
+    private double calculateReward(Game game){
+        double livesPenalty = (3 - game.getPacmanNumberOfLivesRemaining()) * CAUGHT_BY_NON_EDIBLE_GHOST_PENALTY;
+        double timeStepPenalty = game.getCurrentLevelTime() * DECAY_PENALTY;
+
+        double eatenPillsReward = (game.getNumberOfPills() - game.getNumberOfActivePills()) * PILL_REWARD;
+        double eatenGhostsReward = game.getNumGhostsEaten() * EATING_EDIBLE_GHOST_REWARD;
+        double currentLevel = game.getCurrentLevel() * LEVEL_UP_REWARD;
+
+        double reward = (eatenPillsReward +
+                eatenGhostsReward +
+                currentLevel +
+                timeStepPenalty +
+                livesPenalty);
+        this.current_reward.add(reward);
+        return this.current_reward.get(this.current_reward.size() - 1);
+    }
+
+    private double calculateFitnessScore(Game game){
+        double score = game.getScore();
+        double time = game.getTotalTime();
+
+        double fitness_score = score - time;
+
+        return fitness_score; 
+    }
+
+    public double getFitness(){
+        return fitness_score;
+    }
+
+    public int getNumOfGhost(){
+        return numOfGhostEaten;
+    }
+
+    public ArrayList<Double> getRewards() {
+        return this.current_reward;
     }
 
     private class AStarNode implements Comparable<AStarNode> {
